@@ -106,7 +106,7 @@
   /* 动效：界面 600ms 以内用 ease-out；较长的展开用 expo；离场用 exit */
   --ease-out:cubic-bezier(.22,1,.36,1);--ease-expo:cubic-bezier(.16,1,.3,1);--ease-in-out:cubic-bezier(.76,0,.24,1);
   --ease-exit:cubic-bezier(.55,.055,.675,.19);--t-press:140ms;--t-hover:180ms;--t-ui:240ms;--stagger-item:70ms;
-  --font:"IBM Plex Sans","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  --font:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC","WenQuanYi Micro Hei",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   /* legacy names used by inline styles */
   --bg:#ffffff;--card:var(--surface);--line:var(--border);--sub:var(--muted);--stroke:var(--control);--stroke-hi:var(--control-hi);
@@ -752,11 +752,15 @@ input[type=checkbox]:active{transform:scale(.88)}
   .mcard-prompt{margin-top:8px;font-size:13px;line-height:1.5;color:var(--text);display:-webkit-box;
     -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
   .mcard-thumbs{display:flex;align-items:center;gap:6px;margin-top:8px}
-  .mcard-ops{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .mcard-ops{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
   .mcard-ops .btn{flex:none;height:30px;padding:0 10px;font-size:12.5px}
   .mcard-ops .btn-danger{margin-left:auto}
-  .mcard-quota{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
-  .mcard-quota .proxy-pick{margin-left:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mcard-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .mcard-line>b{color:var(--text);font-weight:600;min-width:0;word-break:break-all}
+  .mcard-line .push{margin-left:auto}
+  .mcard-line .sep{color:var(--control-hi)}
+  .mcard-line .proxy-pick{max-width:150px;height:26px;padding:0 8px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mcard-line .badge{height:20px;font-size:11.5px}
   .pool-card .mcard-head{align-items:center}
   .empty-cards{color:var(--muted);font-size:13px;padding:18px 0;text-align:center}
 }
@@ -2357,16 +2361,29 @@ function renderAccounts(){
 function renderAccountCards(totalPages,jobs){
   const cards=pageSlice().map(x=>accountCard(x,jobs[x.name])).join('');
   const pending=accPage===1?pendingAddCards(jobs,new Set(allAccountNames)):'';
-  const bar='<div class="sel-bar"><span>已选 '+selAccounts.size+' 个</span>'
-    +'<button class="btn" onclick="selPage()">本页全选</button>'
-    +'<button class="btn" onclick="clearSel()">清空</button></div>';
-  return bar+(cards||pending?'':searchEmpty('accounts',0)||'<div class="empty-cards">暂无账号</div>')
+  return (cards||pending?'':searchEmpty('accounts',0)||'<div class="empty-cards">暂无账号</div>')
     +cards+pending+accPager(totalPages);
 }
+function srcCompact(x){
+  if(x.site==='doubao')return '<span class="badge b-blue">豆包</span>';
+  if(x.source==='apple')return '<span class="badge b-green">Apple</span>';
+  if(x.source==='cookie')return '<span class="badge b-orange">Cookie</span>';
+  if(x.source==='login')return '<span class="badge b-green">账号</span>';
+  return '';
+}
+function quotaShort(x){
+  return x.site==='doubao'?'今日已出 '+(x.used_today||0)+' 条':(x.remaining+' / '+x.limit);
+}
 function accountCard(x,jb){
-  const badge=accountRunBadge(x,jb);
-  const ipInfo=(x.proxy_mode||x.exit_ip)
-    ?`<div><span>出口</span><b>${x.exit_ip?esc(x.exit_ip):'未探测'}</b>`
+  const run=accountRunBadge(x,jb);
+  const hasRun=!!run&&run.indexOf('—')<0;
+  const kind=x.site==='doubao'?({work:'工作号',personal:'个人号'}[x.doubao_account_type]||'待识别'):'';
+  const wm=(x.site==='doubao'&&x.no_watermark!=null)?(x.no_watermark?'无水印':'⚠ 未关水印'):'';
+  const sub=[x.email?esc(x.email):'未录入邮箱',kind,wm].filter(Boolean).join(' · ');
+  const proxy='<span class="push">代理出口</span>'
+    +`<button class="btn proxy-pick" onclick="openSetAccountProxy('${x.name}','${x.proxy_id||''}')">${x.proxy_name?noTr(x.proxy_name):'默认'}</button>`;
+  const ipLine=(x.proxy_mode||x.exit_ip)
+    ?'<div class="mcard-line"><span>出口</span><b>'+(x.exit_ip?esc(x.exit_ip):'未探测')+'</b>'
       +(x.proxy_mode==='dynamic'||x.proxy_mode==='extract'
         ?`<button class="btn" style="height:24px;padding:0 8px;font-size:12px" onclick="rotateIp('${x.name}')">换IP</button>`:'')
       +`<button class="btn" style="height:24px;padding:0 8px;font-size:12px" onclick="probeIp('${x.name}')">探测</button></div>`
@@ -2375,29 +2392,25 @@ function accountCard(x,jb){
     +`<button class="btn" ${(pendingVerifications.has(x.name)||x.busy)?'disabled':''} onclick="verify('${x.name}',this)">${pendingVerifications.has(x.name)||x.operation==='verifying'?'验证中…':'验证'}</button>`
     +`<button class="btn" onclick="openTestGen('${x.name}')">测试生成</button>`
     +`<button class="btn" onclick="exportAccountCookies('${x.name}')">导出 Cookie</button>`
-    +`<button class="btn" onclick="openSetAccountProxy('${x.name}','${x.proxy_id||''}')">${x.proxy_name?noTr(x.proxy_name):'代理(默认)'}</button>`
     +((x.group==='风控'||x.group==='待激活')
       ?`<button class="btn" title="发一句「你好」：Cloak 在独立浏览器探测，超时未确认不判风控" onclick="probeHello('${x.name}')">你好探测</button>`:'')
     +((x.group==='风控'||x.group==='异常')
       ?`<button class="btn" title="放回正常流程（风控恢复后回到【待激活】，需重新探测）" onclick="recoverAccount('${x.name}',${x.group==='异常'?"'abnormal'":"'risk'"})">恢复</button>`:'')
     +`<button class="btn btn-danger" onclick="delAccount('${x.name}')">删除</button>`;
+  const note=[x.note?noteCell(x):'',sameLoginNote(x),accountJobNote(x,jb)].filter(Boolean).join('');
   return '<div class="acc-card'+(selAccounts.has(x.name)?' sel':'')+'" data-name="'+esc(x.name)+'">'
     +'<div class="mcard-head">'
     +`<input type="checkbox" data-name="${esc(x.name)}" ${selAccounts.has(x.name)?'checked':''} onchange="toggleSel('${x.name}',this.checked)">`
-    +'<div class="mcard-title"><div class="mcard-name" translate="no">'+esc(x.name)+'</div>'
-    +'<div class="mcard-sub">'+accLabel(x)+'</div></div>'
+    +'<div class="mcard-title"><div class="mcard-name" translate="no">'+srcCompact(x)+' '+esc(x.name)+'</div>'
+    +'<div class="mcard-sub">'+sub+'</div></div>'
     +'<div class="mcard-side">'+groupBadge(x)
     +`<label class="sw"><input type="checkbox" ${x.scheduling?'checked':''} onchange="setSched('${x.name}',this.checked)"><i></i></label></div>`
     +'</div>'
-    +'<div class="mcard-kv">'
-    +'<div><span>运行</span><b>'+badge+'</b></div>'
-    +'<div><span>来源</span><b>'+srcBadge(x)+'</b></div>'
-    +'<div class="wide"><span>额度</span><b>'+quotaCell(x,false)+'</b></div>'
-    +'<div><span>最近使用</span><b>'+fmt(x.last_used_at)+'</b></div>'
-    +'<div><span>创建</span><b>'+fmt(x.created_at)+'</b></div>'
-    +ipInfo
-    +'</div>'
-    +'<div class="mcard-note">'+noteCell(x)+sameLoginNote(x)+accountJobNote(x,jb)+'</div>'
+    +'<div class="mcard-line"><span>额度</span><b>'+quotaShort(x)+'</b>'+proxy+'</div>'
+    +'<div class="mcard-line"><span>最近使用</span><b>'+fmt(x.last_used_at)+'</b><span class="sep">·</span><span>创建</span><b>'+fmt(x.created_at)+'</b></div>'
+    +ipLine
+    +(hasRun?'<div class="mcard-line">'+run+'</div>':'')
+    +(note?'<div class="mcard-note">'+note+'</div>':'')
     +'<div class="mcard-ops">'+ops+'</div>'
     +'</div>';
 }
