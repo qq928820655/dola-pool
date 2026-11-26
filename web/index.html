@@ -1939,7 +1939,7 @@ function table(heads,rows){
 }
 
 async function setSched(name,on){
-  try{await api('/api/admin/accounts/'+name,{method:'PATCH',body:{scheduling:on}});}catch(e){alert(dialogText`${e.message}`);}refresh();
+  try{await api('/api/admin/accounts/'+encodeURIComponent(name),{method:'PATCH',body:{scheduling:on}});}catch(e){alert(dialogText`${e.message}`);}refresh();
 }
 
 /* ---- 账号管理 ---- */
@@ -2517,7 +2517,7 @@ async function submitRenameAccount(name){
 
 async function delAccount(name){
   if(!await confirm(dialogText`确定删除账号 ${name}？将同时删除其 profile。`))return;
-  try{await api('/api/admin/accounts/'+name,{method:'DELETE'});}catch(e){alert(dialogText`${e.message}`);}refresh();
+  try{await api('/api/admin/accounts/'+encodeURIComponent(name),{method:'DELETE'});}catch(e){alert(dialogText`${e.message}`);}refresh();
 }
 
 function toggleSel(name,on){
@@ -2797,7 +2797,7 @@ function renderBatchAddForm(){
     showDlg(`<h2>批量添加账号（Cookie JSON）</h2>${sw}
       <input id="f_cookieFiles" type="file" accept=".json,application/json" multiple style="margin-bottom:10px" onchange="previewCookieBatchFiles()">
       <div class="hint" style="margin-bottom:8px">选择一个或多个 Cookie 导出 JSON（每个文件对应一个 dola 账号，如 ck76.json）。
-      账号名默认取文件名；文件需为扩展导出格式（含 cookies 数组）。导入会排队逐个写入 profile。</div>
+      账号名取文件名（去掉 .json）：中文、字母、数字、下划线、连字符保留，空格/括号/点等替换为下划线，超长截到 32 字符；同名账号会跳过。文件需为扩展导出格式（含 cookies 数组）。导入会排队逐个写入 profile。</div>
       <label style="display:flex;align-items:flex-start;gap:6px;color:var(--sub);margin:8px 0">
         <input type="checkbox" id="f_cookieSkip" style="margin-top:2px;width:auto" checked>
         <span>跳过在线验证（先导入，之后可在账号列表点“验证”复核）</span>
@@ -2849,9 +2849,11 @@ acc2 user2@xx.com pass456
 }
 function fileBaseName(fileName){
   const name=(fileName||'').replace(/\.json$/i,'').trim();
-  const safe=name.replace(/[^A-Za-z0-9_-]/g,'_').replace(/^_+|_+$/g,'');
+  // 账号名保留中文等 Unicode 字母数字（后端 NAME_RE 允许 \w），
+  // 只把空格、括号、点等不安全字符替换成下划线；超长截到 32 字符。
+  const safe=name.replace(/[^\p{L}\p{N}_-]+/gu,'_').replace(/^_+|_+$/g,'');
   if(!safe)return '';
-  return safe.length>32?safe.slice(0,32):safe;
+  return safe.length>32?safe.slice(0,32).replace(/_+$/,''):safe;
 }
 async function previewCookieBatchFiles(){
   const input=q('#f_cookieFiles');

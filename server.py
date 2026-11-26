@@ -23,6 +23,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -179,7 +180,9 @@ SIZE_TO_RATIO = {
 }
 VIDEO_MAX_ATTEMPTS = config.VIDEO_MAX_ATTEMPTS  # 0 = 不限次数，在 TASK_DEADLINE 内持续换号
 SUPPORTED_DURATIONS = tuple(config.ALL_DURATIONS)  # (5, 10, 15, 30)
-NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+# 账号名即 accounts/<name>/ 目录名：只允许字母（含中文）、数字、下划线与连字符，
+# 不含点/斜杠/空格，避免目录穿越。用 \w 保留中文，批量导入时文件名可直接当账号名。
+NAME_RE = re.compile(r"^[\w-]{1,32}$")
 
 
 RATIO_TO_DIMENSIONS = {
@@ -3822,8 +3825,12 @@ async def admin_export_cookies(body: CookieExportBody,
             build_export, pool.accounts_dir, names, config.COOKIE_PROFILE_SUBDIR)
     except CookieExportError as exc:
         raise HTTPException(409, str(exc)) from None
+    # 账号名可能含中文：HTTP 头只能 latin-1，非 ASCII 时补 RFC 5987 的 filename*
+    ascii_name = filename.encode("ascii", "ignore").decode()
+    disposition = (f'attachment; filename="{filename}"' if ascii_name == filename else
+                   f"attachment; filename=\"{ascii_name or 'export.json'}\"; filename*=UTF-8''{quote(filename)}")
     return Response(content=content, media_type=media_type, headers={
-        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Content-Disposition": disposition,
         "Cache-Control": "no-store, private", "Pragma": "no-cache",
         "X-Content-Type-Options": "nosniff",
         "X-Exported-Accounts": str(exported), "X-Failed-Accounts": str(failed),
