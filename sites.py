@@ -91,11 +91,12 @@ def site_of_state_file(path) -> str:
 
 
 # ---------------------------------------------------------------- 生图模型（2.4.0，只接豆包）
-# 对外模型名 → (站点, 上游模型名（网页显示名，原样下发）, 支持的比例)。2026-10-19 豆包网页配置：
-# 5.0 Flash / 5.0 Pro / 4.5 / 4.0，比例「自动」+ 7 档，一次出 1 张。
+# 对外模型名 → (站点, 上游模型名（网页显示名，原样下发）, 支持的比例)。2026-11-26 豆包网页配置：
+# 5.5 旗舰 / 5.0 Flash / 5.0 Pro / 4.5 / 4.0，比例「自动」+ 7 档，一次出 1 张。
 # dola 的下载图带「Dola AI」标识且没有官方关闭开关，所以不接 dola 生图。
 DOUBAO_IMAGE_RATIOS = ("auto", "9:16", "2:3", "3:4", "1:1", "4:3", "3:2", "16:9")
 IMAGE_MODELS: dict[str, tuple[str, str, tuple[str, ...]]] = {
+    "doubao-seedream-5.5": (DOUBAO, "Seedream 5.5", DOUBAO_IMAGE_RATIOS),
     "doubao-seedream-5.0-flash": (DOUBAO, "Seedream 5.0 Flash", DOUBAO_IMAGE_RATIOS),
     "doubao-seedream-5.0-pro": (DOUBAO, "Seedream 5.0 Pro", DOUBAO_IMAGE_RATIOS),
     "doubao-seedream-4.5": (DOUBAO, "Seedream 4.5", DOUBAO_IMAGE_RATIOS),

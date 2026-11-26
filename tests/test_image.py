@@ -54,8 +54,10 @@ def _creation(key, *, final=True):
 
 def test_image_models_and_ratio_mapping():
     assert sites.image_spec("DOUBAO_SEEDREAM_5.0_FLASH") == ("doubao", "Seedream 5.0 Flash", sites.DOUBAO_IMAGE_RATIOS)
-    assert set(sites.IMAGE_MODELS) == {"doubao-seedream-5.0-flash", "doubao-seedream-5.0-pro",
-                                       "doubao-seedream-4.5", "doubao-seedream-4.0"}
+    assert set(sites.IMAGE_MODELS) == {"doubao-seedream-5.5", "doubao-seedream-5.0-flash",
+                                       "doubao-seedream-5.0-pro", "doubao-seedream-4.5",
+                                       "doubao-seedream-4.0"}
+    assert sites.image_spec("doubao-seedream-5.5") == ("doubao", "Seedream 5.5", sites.DOUBAO_IMAGE_RATIOS)
     # 不接 dola 生图
     assert not sites.is_image_model("dola-seedream-5.0-pro")
     assert not sites.is_image_model("seedance-2.5")

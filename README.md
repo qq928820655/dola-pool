@@ -168,6 +168,7 @@ curl -X POST https://your-domain/v1/images/edits -H "Authorization: Bearer sk-yo
 
 | 模型 | 豆包里的名字 |
 |---|---|
+| `doubao-seedream-5.5` | Seedream 5.5（旗舰生图） |
 | `doubao-seedream-5.0-flash` | Seedream 5.0 Flash（专业快速） |
 | `doubao-seedream-5.0-pro` | Seedream 5.0 Pro（4 倍消耗） |
 | `doubao-seedream-4.5` | Seedream 4.5 |
