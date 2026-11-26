@@ -26,6 +26,15 @@
 
 <br clear="right">
 
+## 仓库与上游
+
+| 角色 | 地址 | 说明 |
+|---|---|---|
+| 上游项目 | https://github.com/Roins-hub/dola-pool | 唯一更新来源，跟踪其 `main` |
+| 个人镜像 | https://github.com/qq928820655/dola-pool | 公开镜像，含本地自研改动（如 `doubao-seedream-5.5`） |
+
+镜像分支剔除了 `.github/workflows/`（上游 CI 配置）；需要 CI 时以上游仓库为准。下游接入方按 `API.md` 的 Base URL 调用，服务代码来源与版本以上表两个仓库为准。
+
 ## 快速开始
 
 ### 一键部署（Linux，推荐）

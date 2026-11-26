@@ -16,6 +16,8 @@
 | OpenAPI Schema | `https://your-domain/openapi.json` |
 | 管理面板（自带 Web UI） | `https://your-domain/` |
 | 数据库 | `tasks.db`（任务）、`pool_usage.db`（账号/代理/额度/管理员） |
+| 上游项目 | https://github.com/Roins-hub/dola-pool |
+| 本服务镜像 | https://github.com/qq928820655/dola-pool |
 
 ---
 
